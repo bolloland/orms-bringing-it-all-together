@@ -1,8 +1,8 @@
 require 'pry'
 
 class Dog
-    attr_accessor :name, :breed
-    attr_reader :id
+    attr_accessor :name, :breed, :id
+    
 
     def initialize(id: nil, name: name, breed: breed)
         #OR initialize(id: nil, name:, breed:)
@@ -30,6 +30,7 @@ class Dog
     end
 
     def self.new_from_db(row)
+        # binding.pry
         new_dog = Dog.new
         new_dog.id = row[0]
         new_dog.name = row[1]
@@ -37,7 +38,7 @@ class Dog
         new_dog
     end
 
-    def find_by_name(name)
+    def self.find_by_name(name)
         query = <<-SQL
         SELECT * FROM dogs
         WHERE name = ?
@@ -47,7 +48,17 @@ class Dog
         self.new(id: id, name: name, breed: breed)
     end
 
-    def update
+    def self.find_by_id(id)
+        query = <<-SQL
+        SELECT * FROM dogs
+        WHERE id = ?
+        SQL
+        doghunt = DB[:conn].execute(query, id).flatten
+        id, name, breed = doghunt
+        self.new(id: id, name: name, breed: breed)
+    end
+
+    def self.update
         query =<<-SQL
         UPDATE dogs
         SET name = ?, breed = ?
@@ -55,7 +66,6 @@ class Dog
         SQL
         DB[:conn].execute(query, self.name, self.breed, self.id)
     end
-
 
     def save
         if self.id
@@ -71,11 +81,29 @@ class Dog
         self
     end
 
-    def self.create(name:, breed:)
+    def self.create(name:, breed:) ##attr_accessor :id
         dog = Dog.new(name: name, breed: breed)
         dog.save
         dog
     end    
+            ##???
+    def self.find_or_create_by(name:, breed:)
+        
+        query = <<-SQL
+        SELECT * FROM dogs 
+        WHERE name = ? AND breed = ?
+        LIMIT 1
+        SQL
+        dog = DB[:conn].execute(query, name, breed)
+
+        if !dog.empty?
+            dog_data = dog[0]
+            dog = Dog.new(id: dog_data[0], name: dog_data[1], breed: dog_data[2])
+        else             ###^^^^
+            dog = self.create(name: name, breed: breed)
+        end
+        dog
+    end
 end
     # query =<<-SQL
     # SELECT * FROM dogs
