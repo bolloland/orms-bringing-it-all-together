@@ -58,7 +58,7 @@ class Dog
         self.new(id: id, name: name, breed: breed)
     end
 
-    def self.update
+    def update
         query =<<-SQL
         UPDATE dogs
         SET name = ?, breed = ?
